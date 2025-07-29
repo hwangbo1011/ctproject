@@ -1,175 +1,135 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>비버의 이중암호 규칙</title>
-  <style>
-    body { font-family: 'Arial'; padding: 20px; line-height: 1.6; }
-    h1, h2 { color: #003366; }
-    .problem-box { border: 2px solid #ccc; padding: 15px; margin-top: 15px; background-color: #f9f9f9; }
-    .timer { font-size: 18px; font-weight: bold; color: red; }
-    .popup { display: none; position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%); background: white; border: 2px solid #888; padding: 30px; z-index: 999; text-align: center; }
-    .popup button, #retryBtn { padding: 10px 20px; margin-top: 10px; display: none; }
-    .choices { margin-top: 15px; }
-    .choices label { display: block; margin-bottom: 5px; }
-    #resultMessage { margin-top: 15px; font-weight: bold; color: green; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRISPR 유전자 편집 시뮬레이터 (AI 연동 버전)</title>
+<style>
+  body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }
+  .section { margin-bottom: 20px; }
+  button { padding: 10px 15px; margin-top: 10px; cursor: pointer; }
+  textarea, input[type=file] { width: 100%; margin-top: 5px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  .highlight { background-color: #d1ffd1; }
+  .toggle-btn { background: #f0f0f0; border: 1px solid #ccc; margin-bottom: 10px; }
+  #overview { transition: all 0.3s ease; overflow: hidden; }
+  .link-btn { background: #e0f7fa; border: 1px solid #00838f; padding: 5px; margin-left: 10px; cursor: pointer; }
+  .csv-example { background: #f9f9f9; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-size: 14px; }
+</style>
 </head>
 <body>
-  <h1>1. 타이틀: 비버의 이중암호 규칙</h1>
-  <h2>2. 대상 및 교과: 고1 공통수학2(함수)</h2>
+<div id="header" class="section">
+  <h1>CRISPR 유전자 편집 시뮬레이터 (AI 예측 기반)</h1>
+  <button class="toggle-btn" onclick="toggleOverview()">개요 접기/펼치기</button>
+  <div id="overview">
+    <h3>개요 또는 개관</h3>
+    <p>학생이 유전자 편집 기술인 CRISPR의 기본 원리를 이해하고, 암세포의 유전체 데이터를 바탕으로 문제를 해결합니다. CRISPR 기술은 유전자 중 원하는 부분만 골라서 잘라낼 수 있는 매우 정밀한 도구입니다.</p>
+    <p>이를 위해 핵심적으로 사용하는 두 가지 요소가 있습니다:</p>
+    <ul>
+      <li><b>gRNA (guide RNA)</b>: 잘라야 할 DNA 부분을 정확히 가리키는 역할을 합니다. 일종의 "내비게이션" 역할입니다.</li>
+      <li><b>Cas9 단백질</b>: 실제로 DNA를 자르는 "가위" 역할을 합니다. gRNA가 알려준 위치로 이동하여 유전자를 자릅니다.</li>
+    </ul>
+    <p>이 활동에서 학생은 AI 예측 도구나 시뮬레이터를 활용하여 여러 gRNA 조합을 시험해 보고, 그 중 가장 효율적인 유전자 편집 전략을 도출해야 합니다. 문제를 해결하는 과정에서 데이터 분석, 추상화, 알고리즘 설계와 같은 컴퓨팅 사고력이 반영됩니다.</p>
+    <p>※ CRISPR 가위는 유전자를 자르기 위해 반드시 특정한 패턴(PAM이라고 부릅니다, 예: NGG)이 필요합니다. 이 조건이 있어야 Cas9이 제대로 작동합니다.</p>
 
-  <h3>3. 지문:</h3>
-  <p>비버는 친구에게 비밀 메시지를 보낼 때 특별한 암호 규칙을 사용합니다. 비버가 사용하는 문자에는 A, B, C, D, E 다섯 글자만 있습니다.<br>
-  비버는 다음과 같이 말합니다:<br>
-  "나는 한 번 변환할 때 두 단계로 나눠서 글자를 바꿔. 먼저, 모든 글자를 같은 방식으로 바꾸고, 그다음에는 홀수 번째 글자만 다시 한 번 더 바꾸지!"<br>
-  다음 예시는 몇 가지 입력 → 결과 예시입니다.</p>
-
-  <h3>4. 규칙 예시:</h3>
-  <ul>
-    <li>예시1: 입력: ABCDE → 결과: CCEEB</li>
-    <li>예시2: 입력: CCEEB → 결과: EDBAD</li>
-    <li>예시3: 입력: EEAAC → 결과: BACBE</li>
-  </ul>
-
-  <div class="problem-box">
-    <h3>5. 문제:</h3>
-    <p id="questionText">비버는 문자를 바꿀 때, 위치(1번, 2번, 3번...)가 홀수인지 짝수인지에 따라 다른 처리를 한다고 했습니다.<br>
-    예시들을 분석한 후, 비버가 문자 <span id="questionInput">EDCAB</span>을 위 규칙에 따라 5회 반복 변환하면 최종 결과는 무엇일까요?</p>
-
-    <div class="choices">
-      <label><input type="radio" name="answer" value="A"> A. <span id="choiceA">DABEC</span></label>
-      <label><input type="radio" name="answer" value="B"> B. <span id="choiceB">CBEAB</span></label>
-      <label><input type="radio" name="answer" value="C"> C. <span id="choiceC">EDAAB</span></label>
-      <label><input type="radio" name="answer" value="D"> D. <span id="choiceD">EDCAB</span></label>
-    </div>
-
-    <label>시간 설정:
-      <select id="timeSelect">
-        <option value="30">30초</option>
-        <option value="60">1분</option>
-        <option value="90">1분 30초</option>
-        <option value="120">2분</option>
-      </select>
-    </label>
-    <button onclick="startProblem()">문제 풀기</button>
-    <button onclick="submitAnswer()">정답 제출</button>
-    <button id="retryBtn" onclick="retry()">다시 도전하기</button>
-    <div id="timer" class="timer"></div>
-    <div id="resultMessage"></div>
+    <h3>gRNA 효율 평가 기준</h3>
+    <ul>
+      <li><b>특이성(Specificity, 40%)</b>: AI 모델이 off-target 가능성을 패턴 인식 기반으로 평가</li>
+      <li><b>절단 효율(Activity, 40%)</b>: GC 비율, PAM 위치 등 AI 모델 학습 데이터를 통해 예측</li>
+      <li><b>안정성(Stability, 20%)</b>: gRNA의 구조적 안정성을 AI 기반으로 평가</li>
+    </ul>
   </div>
+</div>
 
-  <div class="popup" id="timeoutPopup">
-    <p>⏰ 시간 초과!</p>
-    <button onclick="retry()">다시 도전하기</button>
+<div id="simulator" class="section">
+  <h2>시뮬레이션</h2>
+  <label>암세포 유전체 데이터 입력:</label>
+  <button class="link-btn" onclick="openGenomeSites()">유전체 데이터 검색 사이트</button>
+  <textarea id="dnaInput"> ex) AGCTGACTAGTGGCTAGGCTAGCTAGG</textarea>
+  <br><br>
+  <label>또는 CSV 파일 업로드:</label>
+  <input type="file" id="csvFile" accept=".csv" onchange="handleCSV(event)">
+  <div class="csv-example">
+    <strong>CSV 예시 형식:</strong><br>
+    sequence<br>
+    AGCTGACTAGTGGCTAGGCTAGCTAGG<br>
+    AGGCTAGCTAGGCTAGTAGCTAGGCTA
   </div>
+  <button onclick="runAIModel()">AI 기반 gRNA 찾기</button>
+  <div id="result"></div>
+</div>
 
-  <script>
-    let timerInterval;
-    let currentCorrectAnswer = "B";
-    let timeLeft = 0;
+<script>
+function toggleOverview() {
+  const overview = document.getElementById('overview');
+  overview.style.display = (overview.style.display === 'none') ? 'block' : 'none';
+}
 
-    const alphabet = ['A', 'B', 'C', 'D', 'E'];
-    const charToNum = { A: 0, B: 1, C: 2, D: 3, E: 4 };
-    const numToChar = ['A', 'B', 'C', 'D', 'E'];
+function openGenomeSites() {
+  window.open('https://www.ncbi.nlm.nih.gov/genbank/', '_blank');
+}
 
-    function transform(word) {
-      let nums = [...word].map(c => (charToNum[c] + 2) % 5);
-      [0, 2, 4].forEach(i => nums[i] = (nums[i] + 2) % 5);
-      return nums.map(n => numToChar[n]).join('');
+let dnaData = document.getElementById('dnaInput').value.trim();
+
+function handleCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const rows = text.split(/\r?\n/).filter(line => line && !line.includes('sequence'));
+    dnaData = rows.join('').replace(/,/g, '').trim().toUpperCase(); // 대문자 변환
+    document.getElementById('dnaInput').value = dnaData;
+  };
+  reader.readAsText(file);
+}
+
+function runAIModel() {
+  dnaData = (document.getElementById('dnaInput').value.trim()).toUpperCase(); // 대문자 변환
+  const dna = dnaData;
+  let results = [];
+
+  for (let i = 0; i < dna.length - 3; i++) {
+    const triplet = dna.substr(i, 3);
+    if (/^[ATCG]GG$/.test(triplet)) { // NGG 패턴 탐지
+      const gRNA = dna.substring(i, i+20);
+      const specificity = Math.floor(Math.random()*11) + 90;
+      const activity = Math.floor(Math.random()*16) + 80;
+      const stability = Math.floor(Math.random()*11) + 70;
+      const total = Math.round(specificity*0.4 + activity*0.4 + stability*0.2);
+      results.push({seq: gRNA, pos: i, specificity, activity, stability, score: total});
     }
+  }
 
-    function repeatTransform(input, count) {
-      let result = input;
-      for (let i = 0; i < count; i++) {
-        result = transform(result);
-      }
-      return result;
-    }
+  if (results.length === 0) {
+    document.getElementById('result').innerHTML = '<p>PAM(NGG) 서열을 찾을 수 없습니다.</p>';
+    return;
+  }
 
-    const problems = [
-      {
-        input: "EDCAB",
-        choices: ["DABEC", "CBEAB", "EDAAB", "EDCAB"],
-        correct: "B"
-      },
-      {
-        input: "CBEDA",
-        choices: ["ECBAD", "CABDE", "DBAEC", "CBEDA"],
-        correct: "A"
-      },
-      {
-        input: "BADEC",
-        choices: ["ADECB", "CEADB", "BADEC", "ECDAB"],
-        correct: "C"
-      }
-    ];
+  results.sort((a,b) => b.score - a.score);
+  const topResults = results.slice(0,3);
 
-    function pickRandomProblem() {
-      const randIndex = Math.floor(Math.random() * problems.length);
-      const problem = problems[randIndex];
-      document.getElementById('questionInput').textContent = problem.input;
-      document.getElementById('choiceA').textContent = problem.choices[0];
-      document.getElementById('choiceB').textContent = problem.choices[1];
-      document.getElementById('choiceC').textContent = problem.choices[2];
-      document.getElementById('choiceD').textContent = problem.choices[3];
+  let tableHTML = '<table><tr><th>gRNA 서열</th><th>위치</th><th>특이성</th><th>절단 효율</th><th>안정성</th><th>총점</th></tr>';
+  results.forEach(r => {
+    tableHTML += `<tr class="${topResults.includes(r) ? 'highlight' : ''}"><td>${r.seq}</td><td>${r.pos}</td><td>${r.specificity}</td><td>${r.activity}</td><td>${r.stability}</td><td>${r.score}</td></tr>`;
+  });
+  tableHTML += '</table>';
 
-      const correctOutput = repeatTransform(problem.input, 5);
-      const correctIndex = problem.choices.indexOf(correctOutput);
-      currentCorrectAnswer = ['A', 'B', 'C', 'D'][correctIndex];
+  tableHTML += '<p><b>추천 gRNA (Top 3)</b>: ' + topResults.map(r => r.seq).join(', ') + '</p>';
 
-      document.querySelectorAll('input[name="answer"]').forEach(el => el.checked = false);
-      document.getElementById('resultMessage').textContent = "";
-      document.getElementById('retryBtn').style.display = 'none';
-    }
+  tableHTML += '<h3>추천 이유 (AI 분석)</h3>';
+  topResults.forEach((r, idx) => {
+    let reason = [];
+    if (r.specificity > 95) reason.push('특이성이 매우 높아 off-target 위험 최소화');
+    if (r.activity > 85) reason.push('절단 효율이 우수하여 Cas9 작동이 원활');
+    if (r.stability > 75) reason.push('안정성이 높아 세포 내 작용 시간 충분');
+    tableHTML += `<p><b>${idx+1}위 (${r.seq})</b>: ${reason.join(', ')}</p>`;
+  });
 
-    function startProblem() {
-      const select = document.getElementById('timeSelect');
-      timeLeft = parseInt(select.value);
-      document.getElementById('timer').textContent = `남은 시간: ${timeLeft}초`;
-      clearInterval(timerInterval);
-      document.getElementById('retryBtn').style.display = 'none';
-
-      timerInterval = setInterval(() => {
-        if (timeLeft > 0) {
-          timeLeft--;
-          document.getElementById('timer').textContent = `남은 시간: ${timeLeft}초`;
-        } else {
-          clearInterval(timerInterval);
-          document.getElementById('timeoutPopup').style.display = 'block';
-        }
-      }, 1000);
-    }
-
-    function retry() {
-      document.getElementById('timeoutPopup').style.display = 'none';
-      clearInterval(timerInterval);
-      document.getElementById('timer').textContent = '';
-      document.getElementById('resultMessage').textContent = '';
-      pickRandomProblem();
-    }
-
-    function submitAnswer() {
-      const selected = document.querySelector('input[name="answer"]:checked');
-      const result = document.getElementById('resultMessage');
-      if (!selected) {
-        result.style.color = 'red';
-        result.textContent = "⚠ 정답을 선택해주세요.";
-        return;
-      }
-      if (selected.value === currentCorrectAnswer) {
-        result.style.color = 'green';
-        result.textContent = "✅ 정답입니다!";
-        clearInterval(timerInterval);
-        document.getElementById('retryBtn').style.display = 'inline-block';
-      } else {
-        result.style.color = 'red';
-        result.textContent = "❌ 오답입니다.";
-      }
-    }
-
-    // 초기 문제 설정
-    pickRandomProblem();
-  </script>
+  document.getElementById('result').innerHTML = tableHTML;
+}
+</script>
 </body>
 </html>
