@@ -25,7 +25,7 @@ with open('./gene expression.html', 'r', encoding = 'utf-8') as f2:
     f2.close()    
 
 with open('./blood.html', 'r', encoding = 'utf-8') as f3:
-    html2 = f3.read()
+    html3 = f3.read()
     f3.close()  
 
 # Box#1(4), Box#2(1)
@@ -45,7 +45,7 @@ with col1:
         #htmlviewer.html(html, height=600)    
 
     with st.expander('심혈관계 질환 예측'):
-        components.html(html2, height=1000, scrolling=True)
+        components.html(html3, height=1000, scrolling=True)
         #htmlviewer.html(html, height=600)
     
 with col2:
