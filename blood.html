@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>혈액 검사 결과 데이터를 통한 심혈관계 질병 예측 시뮬레이터</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h2 { color: #333; }
+  .intro-box { background: #e8f4ff; padding: 15px; border-left: 5px solid #007acc; margin-bottom: 20px; border-radius: 5px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+  table, th, td { border: 1px solid #aaa; }
+  th, td { padding: 8px; text-align: center; }
+  .ai-prediction-yes { background-color: #ffb3b3; font-weight: bold; }
+  .ai-prediction-no { background-color: #b3ffb3; font-weight: bold; }
+  .result { margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px; }
+  button { margin-top: 10px; padding: 8px 15px; cursor: pointer; }
+  .selected { background-color: #4CAF50; color: white; }
+  .error-cell { background-color: #ffdddd; }
+  .info-box { background: #fff7e6; padding: 10px; border-left: 5px solid #ffa500; margin-bottom: 15px; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<h2>혈액 검사 결과 데이터를 통한 심혈관계 질병 예측 시뮬레이터</h2>
+<div class="intro-box">
+  <strong>이 시뮬레이터는 혈액검사 및 생리적 지표 데이터를 활용해 머신러닝 기반 심혈관계 질병 예측을 체험하는 학습 도구입니다.<br>
+  학생은 표로 제시되는 랜덤 샘플 데이터 또는 직접 입력한 데이터를 바탕으로 질병 여부를 예측하고, AI 예측 결과와 비교합니다.<br>
+  머신러닝 모델은 CSV 파일 업로드를 통해 학습이 가능하며, AI 예측과 학생 예측을 비교하여 정확도와 예측 이유를 분석할 수 있습니다.</strong>
+</div>
+
+<div class="info-box">
+  <strong>정상 수치 안내:</strong><br>
+  혈압: 120/80 mmHg 이하<br>
+  총 콜레스테롤: 200 mg/dL 이하<br>
+  공복혈당: 70 ~ 100 mg/dL (100~125는 경계, 126 이상은 위험)<br>
+  최대심박수: (220 - 나이), 평균적으로 140 이상은 양호<br>
+  협심증: 심장 근육에 혈액과 산소 공급이 부족하여 흉통이나 압박감을 유발하는 질환 (관상동맥의 혈류 제한이 원인)
+</div>
+
+<h3>1. 머신러닝 CSV 업로드 (AI 예측 자동 표시)</h3>
+<input type="file" id="csvFile" accept=".csv"><br><br>
+<div id="csvTable"></div>
+<div class="result" id="accuracy"></div>
+<div class="result" id="errorAnalysis"></div>
+
+<h3>2. 랜덤 샘플 데이터 제시</h3>
+<button onclick="generateSample()">랜덤 샘플 보기</button>
+<div id="sampleData"></div>
+
+<h3>3. 학생 예측 입력</h3>
+<div>
+  <label>학생 예측:
+    <button id="btnYes" onclick="setStudentPrediction('Yes', 'btnYes')">Yes</button>
+    <button id="btnNo" onclick="setStudentPrediction('No', 'btnNo')">No</button>
+  </label>
+</div>
+<br>
+<label>예측 이유: <input type="text" id="studentReason" placeholder="예측 이유를 입력하세요"></label><br><br>
+
+<h3>4. AI 예측 비교 및 이유 (랜덤 샘플 포함)</h3>
+<button onclick="predictDisease()">AI 예측 확인</button>
+<div class="result" id="aiSamplePrediction"></div>
+<div class="result" id="aiSampleReason"></div>
+<div class="result" id="studentComparison"></div>
+
+<div style="margin-top:20px;">
+<button onclick="resetSimulator()">다시하기</button>
+</div>
+
+<script>
+let studentPredictionValue = "";
+let lastSampleIndex = -1;
+let currentSample = null;
+
+function setStudentPrediction(value, btnId) {
+    studentPredictionValue = value;
+    document.getElementById('btnYes').classList.remove('selected');
+    document.getElementById('btnNo').classList.remove('selected');
+    document.getElementById(btnId).classList.add('selected');
+}
+
+function calculateRisk(bp, chol, sugar, hr, angina) {
+    let riskScore = 0;
+    let reasons = [];
+    if (bp >= 140) { riskScore++; reasons.push("혈압 높음"); }
+    if (chol >= 240) { riskScore++; reasons.push("콜레스테롤 높음"); }
+    if (sugar > 125) { riskScore++; reasons.push("공복혈당 높음"); }
+    if (angina == 1) { riskScore++; reasons.push("협심증 있음"); }
+    if (hr < 140) { riskScore++; reasons.push("최대심박수 낮음"); }
+    let prediction = (riskScore >= 2) ? "Yes" : "No";
+    return {prediction, reasons: reasons.join(",")};
+}
+
+function predictDisease() {
+    if (!currentSample) return;
+    let {bp, chol, sugar, hr, angina} = currentSample;
+    let {prediction, reasons} = calculateRisk(bp, chol, sugar, hr, angina);
+    let studentReason = document.getElementById('studentReason').value;
+
+    document.getElementById('aiSamplePrediction').innerHTML = `<strong>랜덤 샘플 AI 예측:</strong> ${prediction}`;
+    document.getElementById('aiSampleReason').innerHTML = `<strong>AI 예측 이유:</strong> ${reasons}`;
+    document.getElementById('studentComparison').innerHTML = `<strong>학생 예측:</strong> ${studentPredictionValue} (이유: ${studentReason})<br><strong>비교 결과:</strong> ${(studentPredictionValue === prediction) ? '일치' : '불일치'}`;
+}
+
+function resetSimulator() {
+    studentPredictionValue = "";
+    document.getElementById('btnYes').classList.remove('selected');
+    document.getElementById('btnNo').classList.remove('selected');
+    document.getElementById('studentReason').value = "";
+    document.getElementById('aiSamplePrediction').innerHTML = "";
+    document.getElementById('aiSampleReason').innerHTML = "";
+    document.getElementById('studentComparison').innerHTML = "";
+    generateSample();
+}
+
+function generateSample() {
+    const samples = [
+        {age:55, bp:150, chol:245, sugar:130, hr:135, angina:1},
+        {age:48, bp:130, chol:180, sugar:95, hr:160, angina:0},
+        {age:60, bp:160, chol:250, sugar:140, hr:140, angina:1}
+    ];
+    let newIndex;
+    do {
+        newIndex = Math.floor(Math.random() * samples.length);
+    } while (newIndex === lastSampleIndex);
+    lastSampleIndex = newIndex;
+    currentSample = samples[newIndex];
+
+    let s = currentSample;
+    let table = `<table><tr><th>나이</th><th>혈압</th><th>콜레스테롤</th><th>공복혈당</th><th>최대심박수</th><th>협심증</th></tr>`;
+    table += `<tr><td>${s.age}</td><td>${s.bp}</td><td>${s.chol}</td><td>${s.sugar}</td><td>${s.hr}</td><td>${s.angina}</td></tr></table>`;
+    document.getElementById('sampleData').innerHTML = table;
+
+    document.getElementById('bp').value = s.bp;
+    document.getElementById('chol').value = s.chol;
+    document.getElementById('sugar').value = s.sugar;
+    document.getElementById('hr').value = s.hr;
+    document.getElementById('angina').value = s.angina;
+}
+
+document.getElementById('csvFile').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        parseCSV(text);
+    }
+    reader.readAsText(file);
+});
+
+function parseCSV(data) {
+    const rows = data.trim().split('\n').map(r => r.split(','));
+    let headers = rows[0];
+    if (!headers.includes("AI 예측")) headers.push("AI 예측");
+
+    let table = '<table><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+    for (let i=1; i<rows.length; i++) {
+        let cells = rows[i];
+        let bp = parseInt(cells[1]);
+        let chol = parseInt(cells[2]);
+        let sugar = parseInt(cells[3]);
+        let hr = parseInt(cells[4]);
+        let angina = parseInt(cells[5]);
+        let {prediction} = calculateRisk(bp, chol, sugar, hr, angina);
+        let predictionClass = (prediction === "Yes") ? 'ai-prediction-yes' : 'ai-prediction-no';
+        cells.push(`<span class='${predictionClass}'>${prediction}</span>`);
+        table += `<tr>` + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+    }
+    table += '</table>';
+
+    document.getElementById('csvTable').innerHTML = table;
+}
+</script>
+
+</body>
+</html>

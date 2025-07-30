@@ -129,13 +129,17 @@ function generateQuestion() {
     let repressors = ["W", "Q", "R", "T", "M"];
     
     genesData = [];
-    let activeActivators = activators.sort(() => 0.5 - Math.random()).slice(0, difficulty==="easy"?2: difficulty==="medium"?3:4);
-    let activeRepressors = repressors.sort(() => 0.5 - Math.random()).slice(0, difficulty==="easy"?1: difficulty==="medium"?2:3);
+    let activeActivators = activators.sort(() => 0.5 - Math.random())
+                                     .slice(0, difficulty==="easy"?2: difficulty==="medium"?3:4);
+    let activeRepressors = repressors.sort(() => 0.5 - Math.random())
+                                     .slice(0, difficulty==="easy"?1: difficulty==="medium"?2:3);
 
     // 유전자 랜덤 생성
     for (let i = 0; i < geneCount; i++) {
-        let needAct = activators.sort(() => 0.5 - Math.random()).slice(0, difficulty==="easy"?1: difficulty==="medium"?2:3);
-        let needRep = Math.random() > 0.5 ? [repressors[Math.floor(Math.random()*repressors.length)]] : [];
+        let needAct = activators.sort(() => 0.5 - Math.random())
+                                .slice(0, difficulty==="easy"?1: difficulty==="medium"?2:3);
+        let needRep = Math.random() > 0.5 ? 
+                      [repressors[Math.floor(Math.random()*repressors.length)]] : [];
         genesData.push({
             name: "Gene" + (i+1),
             activators: needAct,
@@ -143,8 +147,12 @@ function generateQuestion() {
         });
     }
 
+    // 최소 1개 발현 보장 → 첫 번째 유전자는 발현 조건에 맞춤
+    genesData[0].activators = activeActivators.slice(0, Math.min(activeActivators.length, genesData[0].activators.length));
+    genesData[0].repressors = []; // 억제인자 제거
+
     // 표 만들기 (난이도별 스타일)
-    let tableClass = difficulty === "easy" ? "easy" : difficulty === "medium" ? "medium" : "hard";
+    let tableClass = difficulty;
     let tableHTML = `<div class="${tableClass}"><table><tr><th>유전자</th><th>필요 전사인자</th><th>억제인자</th></tr>`;
     genesData.forEach(g => {
         tableHTML += `<tr><td>${g.name}</td>
@@ -159,14 +167,28 @@ function generateQuestion() {
                                                           <b>현재 활성 억제인자:</b> ${activeRepressors.join(", ")}`;
 
     // 정답 계산
-    let activeGenes = genesData.filter(g => g.activators.every(a => activeActivators.includes(a)) && g.repressors.every(r => !activeRepressors.includes(r)));
+    let activeGenes = genesData.filter(g => g.activators.every(a => activeActivators.includes(a)) && 
+                                            g.repressors.every(r => !activeRepressors.includes(r)));
     correctAnswer = activeGenes.map(g=>g.name).join(", ");
 
-    // 선택지 생성
+    // 보기 수 설정 (난이도별)
+    let optionCount = difficulty === "easy" ? 3 : (difficulty === "medium" ? 4 : 6);
+
+    // 보기 생성 (정답 + 랜덤 오답) → '없음' 제외
+    let options = new Set([correctAnswer]);
+    while (options.size < optionCount) {
+        let randomGenes = genesData.sort(() => 0.5 - Math.random())
+                                   .slice(0, Math.floor(Math.random() * geneCount)+1)
+                                   .map(g => g.name).join(", ");
+        if (randomGenes.trim() !== "" && randomGenes !== correctAnswer) {
+            options.add(randomGenes);
+        }
+    }
+
+    // 보기 랜덤 섞기
+    let optionsArr = Array.from(options).sort(() => Math.random() - 0.5);
     let optionsHTML = "";
-    let distractors = [correctAnswer, "없음", genesData.slice(0,2).map(g=>g.name).join(", "), genesData.slice(1,3).map(g=>g.name).join(", ")];
-    distractors = [...new Set(distractors)];
-    distractors.forEach((opt, idx) => {
+    optionsArr.forEach((opt, idx) => {
         optionsHTML += `<label><input type="radio" name="answer" value="${opt}"> ${String.fromCharCode(65+idx)}) ${opt}</label>`;
     });
     document.getElementById("optionsBox").innerHTML = optionsHTML;

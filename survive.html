@@ -32,8 +32,9 @@
 
 <div class="story">
   <strong>문제:</strong><br>
-  항생제를 투여했을 때 살아남을 수 있는 세균을 찾는 미션입니다.<br>
-  난이도가 높아질수록 세균 수, 유전자 종류, 항생제 종류, 필요 유전자 개수가 늘어납니다.
+  난이도가 높아질수록 세균 수, 유전자 종류, 항생제 종류, 처리 항생제 수가 늘어납니다.<br>
+  선택된 모든 항생제의 내성 조건을 만족하는 세균만 생존합니다.<br>
+  항상 최소 한 마리의 세균은 생존합니다.
 </div>
 
 <div class="box">
@@ -68,6 +69,10 @@
   </div>
 
   <div class="box">
+    <p id="selectedAntibiotics" style="font-weight:bold; color:blue;"></p>
+  </div>
+
+  <div class="box">
     <p><strong>세균 목록:</strong></p>
     <ul id="bacteriaListUI"></ul>
   </div>
@@ -97,11 +102,12 @@ let remainingTime;
 let totalTime;
 let correctSurvivors = [];
 let antibioticsData = {};
+let selectedAntibioticSet = [];
 
 const difficultySettings = {
-  easy: { count: 5, genes: ['R1','R2','R3','R4'], antibiotics: 2, genesPerAntibiotic: [1,1], info: "세균 5마리, 항생제 2종, 각 항생제당 1개 유전자 필요" },
-  medium: { count: 7, genes: ['R1','R2','R3','R4','R5'], antibiotics: 3, genesPerAntibiotic: [1,2], info: "세균 7마리, 항생제 3종, 각 항생제당 1~2개 유전자 필요" },
-  hard: { count: 10, genes: ['R1','R2','R3','R4','R5','R6','R7'], antibiotics: 4, genesPerAntibiotic: [2,3], info: "세균 10마리, 항생제 4종, 각 항생제당 2~3개 유전자 필요" }
+  easy: { count: 5, genes: ['R1','R2','R3','R4'], antibiotics: 2, genesPerAntibiotic: [1,1], treatCount: 1, info: "세균 5마리, 항생제 2종 중 1종 처리" },
+  medium: { count: 7, genes: ['R1','R2','R3','R4','R5'], antibiotics: 3, genesPerAntibiotic: [1,2], treatCount: 2, info: "세균 7마리, 항생제 3종 중 2종 처리" },
+  hard: { count: 10, genes: ['R1','R2','R3','R4','R5','R6','R7'], antibiotics: 4, genesPerAntibiotic: [2,3], treatCount: 3, info: "세균 10마리, 항생제 4종 중 3종 처리" }
 };
 
 function updateDifficultyInfo() {
@@ -116,7 +122,7 @@ function randomGenes(pool, range) {
 }
 
 function generateAntibiotics(difficulty) {
-  const { antibiotics, genes, genesPerAntibiotic } = difficultySettings[difficulty];
+  const { antibiotics, genes, genesPerAntibiotic, treatCount } = difficultySettings[difficulty];
   const antibioticList = document.getElementById('antibioticList');
   antibioticList.innerHTML = '';
   antibioticsData = {};
@@ -126,9 +132,14 @@ function generateAntibiotics(difficulty) {
     const reqGenes = randomGenes(genes, genesPerAntibiotic);
     antibioticsData[names[i]] = reqGenes;
     const p = document.createElement('p');
-    p.textContent = `항생제 ${names[i]} 필요 유전자: ${reqGenes.join(', ')}`;
+    p.textContent = `항생제 ${names[i]} 내성에 필요한 유전자: ${reqGenes.join(', ')}`;
     antibioticList.appendChild(p);
   }
+
+  // 처리할 항생제 무작위 선택
+  const shuffledNames = names.slice(0, antibiotics).sort(() => 0.5 - Math.random());
+  selectedAntibioticSet = shuffledNames.slice(0, treatCount);
+  document.getElementById('selectedAntibiotics').textContent = `💊 이번에 처리할 항생제: ${selectedAntibioticSet.map(n => '항생제 ' + n).join(', ')}`;
 }
 
 function generateRandomBacteriaList(count, genesPool) {
@@ -145,15 +156,24 @@ function generateRandomBacteriaList(count, genesPool) {
 }
 
 function startChallenge() {
-  const difficulty = document.getElementById('difficultySelect').value;
-  const { count, genes } = difficultySettings[difficulty];
-  
-  totalTime = parseInt(document.getElementById('timeSelect').value);
-  remainingTime = totalTime;
-  
-  generateAntibiotics(difficulty);
-  generateRandomBacteriaList(count, genes);
-  calculateCorrectSurvivors();
+  let hasSurvivor = false;
+  let safetyLoop = 0;
+
+  // 정답 없는 경우 방지를 위해 반복
+  while (!hasSurvivor && safetyLoop < 20) {
+    safetyLoop++;
+    const difficulty = document.getElementById('difficultySelect').value;
+    const { count, genes } = difficultySettings[difficulty];
+    
+    totalTime = parseInt(document.getElementById('timeSelect').value);
+    remainingTime = totalTime;
+    
+    generateAntibiotics(difficulty);
+    generateRandomBacteriaList(count, genes);
+    calculateCorrectSurvivors();
+    
+    hasSurvivor = correctSurvivors.length > 0;
+  }
 
   document.getElementById('timerDisplay').innerText = `남은 시간: ${remainingTime}초`;
   document.getElementById('challengeArea').style.display = 'block';
@@ -195,10 +215,11 @@ function calculateCorrectSurvivors() {
   bacteriaItems.forEach((item, idx) => {
     const genesText = item.textContent.match(/\[(.*?)\]/)[1];
     const genes = genesText.split(',').map(g => g.trim());
+    
     let survives = true;
-    for (let drug in antibioticsData) {
-      const req = antibioticsData[drug];
-      if (!req.every(r => genes.includes(r))) {
+    for (let drug of selectedAntibioticSet) {
+      const reqGenes = antibioticsData[drug];
+      if (!reqGenes.every(r => genes.includes(r))) {
         survives = false;
         break;
       }

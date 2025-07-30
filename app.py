@@ -24,7 +24,7 @@ with open('./gene expression.html', 'r', encoding = 'utf-8') as f2:
     html2 = f2.read()
     f2.close()    
 
-with open('./gRNA.html', 'r', encoding = 'utf-8') as f3:
+with open('./blood.html', 'r', encoding = 'utf-8') as f3:
     html2 = f3.read()
     f3.close()  
 
@@ -40,11 +40,11 @@ with col1:
         components.html(html, height=1000, scrolling=True)
         #htmlviewer.html(html, height=600)
 
-    with st.expander('유전자 발현 문제제'):
+    with st.expander('유전자 발현 문제'):
         components.html(html2, height=1000, scrolling=True)
         #htmlviewer.html(html, height=600)    
 
-    with st.expander('gRNA 효율 문제제'):
+    with st.expander('심혈관계 질환 예측'):
         components.html(html2, height=1000, scrolling=True)
         #htmlviewer.html(html, height=600)
     
